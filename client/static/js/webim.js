@@ -21,6 +21,7 @@ var audioshim;
 var fileshim;
 var PAGELIMIT = 8;
 var pageLimitKey = new Date().getTime();
+var socket;
 
 var encode = function ( str ) {
 	if ( !str || str.length === 0 ) return "";
@@ -708,13 +709,29 @@ var login = function() {
 			hiddenLoginUI();
 			showWaitLoginedUI();
 			//根据用户名密码登录系统
-			conn.open({
-				apiUrl : Easemob.im.config.apiURL,
-				user : user,
-				pwd : pass,
-				//连接时提供appkey
-				appKey : Easemob.im.config.appkey
-			});         
+
+			socket = io.connect('ws://localhost:3000');
+			
+			//告诉服务器端有用户登录
+			socket.emit('login', {username:user, passwd:pass});
+			
+			socket.on('login', function(obj){
+				if (obj == "error") {
+					alert("用户名或密码错误");
+				};
+				if (obj == "succeed") {
+					alert("登录成功");
+				};
+				
+			});
+
+			// conn.open({
+			// 	apiUrl : Easemob.im.config.apiURL,
+			// 	user : user,
+			// 	pwd : pass,
+			// 	//连接时提供appkey
+			// 	appKey : Easemob.im.config.appkey
+			// });         
 		// }
 		return false;
 	}, 50);
