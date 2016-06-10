@@ -21,7 +21,7 @@ var audioshim;
 var fileshim;
 var PAGELIMIT = 8;
 var pageLimitKey = new Date().getTime();
-var socket = io.connect('ws://localhost:3000');
+var socket;
 
 var encode = function ( str ) {
 	if ( !str || str.length === 0 ) return "";
@@ -709,19 +709,12 @@ var login = function() {
 			hiddenLoginUI();
 			showWaitLoginedUI();
 			//根据用户名密码登录系统
+
+			socket = io.connect('ws://localhost:3000');
 			
 			//告诉服务器端有用户登录
-			socket.emit('login', {username:user, passwd:pass});
-			
-			socket.on('login', function(obj){
-				if (obj == "error") {
-					alert("用户名或密码错误");
-				};
-				if (obj == "succeed") {
-					alert("登录成功");
-				};
-				
-			});
+			socket.emit('login', {userid:user, username:pass});
+
 
 			// conn.open({
 			// 	apiUrl : Easemob.im.config.apiURL,
@@ -735,45 +728,30 @@ var login = function() {
 	}, 50);
 };
 //注册新用户操作方法
-var register = function() {
+var regist = function() {
 	var user = $("#regist_username").val();
 	var pass = $("#regist_password").val();
 	var nickname = $("#regist_nickname").val();
 	if (user == '' || pass == '' || nickname == '') {
-		alert("用户名/密码不能为空");
+		alert("用户名/密码/昵称 不能为空");
 		return;
 	}
-
-
-	socket.emit('register', {username:user, passwd:pass});
-			
-	socket.on('register', function(obj){
-		if (obj == "error") {
-			alert("用户名已存在");
-		};
-		if (obj == "succeed") {
-			alert("注册成功");
-		};
-				
-	});
-
-
-	// var options = {
-	// 	username : user,
-	// 	password : pass,
-	// 	nickname : nickname,
-	// 	appKey : Easemob.im.config.appkey,
-	// 	success : function(result) {
-	// 		alert("注册成功!");
-	// 		$('#loginmodal').modal('show');
-	// 		$('#regist-div-modal').modal('hide');
-	// 	},
-	// 	error : function(e) {
-	// 		alert(e.error);
-	// 	},
-	// 	apiUrl : Easemob.im.config.apiURL
-	// };
-	// Easemob.im.Helper.registerUser(options);
+	var options = {
+		username : user,
+		password : pass,
+		nickname : nickname,
+		appKey : Easemob.im.config.appkey,
+		success : function(result) {
+			alert("注册成功!");
+			$('#loginmodal').modal('show');
+			$('#regist-div-modal').modal('hide');
+		},
+		error : function(e) {
+			alert(e.error);
+		},
+		apiUrl : Easemob.im.config.apiURL
+	};
+	Easemob.im.Helper.registerUser(options);
 };
 //注册页面返回登录页面操作
 var showlogin = function() {

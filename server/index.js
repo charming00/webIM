@@ -80,7 +80,6 @@ io.on('connection', function(socket){
 		// console.log(socket.name+'加入了聊天室');
 	});
 
-
 	// 监听登录
 	socket.on('login', function(obj){
 		//将新加入用户的唯一标识当作socket的名称，后面退出的时候会用到
