@@ -714,11 +714,12 @@ var login = function() {
 			socket.emit('login', {username:user, passwd:pass});
 			
 			socket.on('login', function(obj){
-				if (obj == "error") {
+				if (obj.result == "error") {
 					alert("用户名或密码错误");
 				};
-				if (obj == "succeed") {
+				if (obj.result == "succeed") {
 					alert("登录成功");
+					buildContactDiv("contractlist", obj.friend);//联系人列表页面处理
 				};
 				
 			});
@@ -748,10 +749,10 @@ var register = function() {
 	socket.emit('register', {username:user, passwd:pass});
 			
 	socket.on('register', function(obj){
-		if (obj == "error") {
+		if (obj.result == "error") {
 			alert("用户名已存在");
 		};
-		if (obj == "succeed") {
+		if (obj.result == "succeed") {
 			alert("注册成功");
 		};
 				
@@ -798,31 +799,69 @@ var setCurrentContact = function(defaultUserId) {
 	curChatUserId = defaultUserId;
 };
 //构造联系人列表
+// var buildContactDiv = function(contactlistDivId, roster) {
+// 	var uielem = document.getElementById("contactlistUL");
+// 	var cache = {};
+// 	for (i = 0; i < roster.length; i++) {
+// 		if (!(roster[i].subscription == 'both' || roster[i].subscription == 'from')) {
+// 			continue;
+// 		}
+// 		var jid = roster[i].jid;
+// 		var userName = jid.substring(jid.indexOf("_") + 1).split("@")[0];
+// 		if (userName in cache) {
+// 			continue;
+// 		}
+// 		cache[userName] = true;
+// 		var lielem = $('<li>').attr({
+// 			'id' : userName,
+// 			'class' : 'offline',
+// 			'className' : 'offline',
+// 			'type' : 'chat',
+// 			'displayName' : userName
+// 		}).click(function() {
+// 			chooseContactDivClick(this);
+// 		});
+// 		$('<img>').attr("src", "static/img/head/contact_normal.png").appendTo(
+// 				lielem);
+// 		$('<span>').html(userName).appendTo(lielem);
+// 		$('#contactlistUL').append(lielem);
+// 	}
+// 	var contactlist = document.getElementById(contactlistDivId);
+// 	var children = contactlist.children;
+// 	if (children.length > 0) {
+// 		contactlist.removeChild(children[0]);
+// 	}
+// 	contactlist.appendChild(uielem);
+// };
+
+
 var buildContactDiv = function(contactlistDivId, roster) {
+	hiddenWaitLoginedUI();
+	showChatUI();
 	var uielem = document.getElementById("contactlistUL");
 	var cache = {};
 	for (i = 0; i < roster.length; i++) {
-		if (!(roster[i].subscription == 'both' || roster[i].subscription == 'from')) {
-			continue;
-		}
-		var jid = roster[i].jid;
-		var userName = jid.substring(jid.indexOf("_") + 1).split("@")[0];
-		if (userName in cache) {
-			continue;
-		}
-		cache[userName] = true;
+		// if (!(roster[i].subscription == 'both' || roster[i].subscription == 'from')) {
+		// 	continue;
+		// }
+		// var jid = roster[i].jid;
+		// var userName = jid.substring(jid.indexOf("_") + 1).split("@")[0];
+		// if (userName in cache) {
+		// 	continue;
+		// }
+		// cache[userName] = true;
 		var lielem = $('<li>').attr({
-			'id' : userName,
+			'id' : roster[i],
 			'class' : 'offline',
 			'className' : 'offline',
 			'type' : 'chat',
-			'displayName' : userName
+			'displayName' : roster[i]
 		}).click(function() {
 			chooseContactDivClick(this);
 		});
 		$('<img>').attr("src", "static/img/head/contact_normal.png").appendTo(
 				lielem);
-		$('<span>').html(userName).appendTo(lielem);
+		$('<span>').html(roster[i]).appendTo(lielem);
 		$('#contactlistUL').append(lielem);
 	}
 	var contactlist = document.getElementById(contactlistDivId);
@@ -832,6 +871,7 @@ var buildContactDiv = function(contactlistDivId, roster) {
 	}
 	contactlist.appendChild(uielem);
 };
+
 //构造群组列表
 var buildListRoomDiv = function(contactlistDivId, rooms, type) {
 	var uielem = document.getElementById(contactlistDivId + "UL");

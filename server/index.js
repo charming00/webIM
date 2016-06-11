@@ -35,25 +35,38 @@ io.on('connection', function(socket){
 	
 	//监听注册
 	socket.on('register', function(obj){
+
+		console.log("aa" > "bb");
 		//将新加入用户的唯一标识当作socket的名称，后面退出的时候会用到
 		var selectSQL = 'select * from user where user_name = "' + obj.username + '"';
+		// var selectSQL = 'select user_name from user where 1';
 		console.log(selectSQL);
 		var insertSQL = 'insert into user(user_name, user_passwd) values("' + obj.username + '" , "' + obj.passwd + '")';
+
+		var registerResult = {};
+
 		conn.query(selectSQL, function (err1, res1) {
 			if (err1) {
 				console.log(err1);
 			}
         	console.log("Select Return ==> ");
+        	// console.log(res1);
+        	// for (var i = 0; i < res1.length; i++) {
+        	// 	console.log(res1[i]);
+        	// 	console.log(res1[i].user_name);
+        	// };
         	if (res1.length == 0 ) {
         		console.log("null");
         		conn.query(insertSQL, function (err2, res2) {
         			console.log("Insert Return ==> ");
-        			socket.emit("register", "succeed");
         		});
+        		registerResult["result"] = "succeed";
         	} else {
         		console.log(res1);
-        		socket.emit("register", "error");
+        		registerResult["result"] = "error";
         	}
+
+        	socket.emit("register", registerResult);
         });
 
 		// socket.name = obj.userid;
@@ -84,19 +97,40 @@ io.on('connection', function(socket){
 	socket.on('login', function(obj){
 		//将新加入用户的唯一标识当作socket的名称，后面退出的时候会用到
 		var selectSQL = 'select * from user where user_name = "' + obj.username + '" and user_passwd = "' + obj.passwd + '"' ;
+		var selectFriendSQL = 'select * from friend where user1 = "' + obj.username + '" or user2 = "' + obj.username + '"';
 		console.log(selectSQL);
 		var insertSQL = 'insert into user(user_name, user_passwd) values("' + obj.username + '" , "' + obj.passwd + '")';
+		var loginResult = {};
+		var friend = [];
 		conn.query(selectSQL, function (err1, res1) {
 			if (err1) {
 				console.log(err1);
 			}
         	console.log("Select Return ==> ");
         	if (res1.length == 0 ) {
-        		socket.emit("login", "error");
+        		loginResult["result"] = "error";
         	} else {
         		console.log(res1);
-        		socket.emit("login", "succeed");
+        		loginResult["result"] = "succeed";
+        		conn.query(selectFriendSQL, function (err2, res2) {
+        			if (err2) {
+        				console.log(err2);
+        			} else {
+        				console.log(res2);
+        				for (var i = 0; i < res2.length; i++) {
+        					if (res2[i].user1 == obj.username) {
+        						friend.push(res2[i].user2);
+        					} else {
+        						friend.push(res2[i].user1);
+        					}
+        				};
+        				console.log(friend);
+        				loginResult["friend"] = friend;
+        				socket.emit("login", loginResult);
+        			}
+        		});
         	}
+        	
         });
 	});
 
