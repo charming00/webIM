@@ -11,6 +11,7 @@ var conn = mysql.createConnection({
 });
 conn.connect();
 
+
 // var insertSQL = 'insert into user(user_name, user_passwd) values("name", "password")';
 // var selectSQL = 'select * from user where user_name = "haha"';
 // conn.query(selectSQL, function (err1, res1) {
@@ -112,6 +113,8 @@ io.on('connection', function(socket){
         	} else {
         		console.log(res1);
         		loginResult["result"] = "succeed";
+        		console.log(obj.username + "socket succeed");
+        		onlineUsers[obj.username] = socket;
         		conn.query(selectFriendSQL, function (err2, res2) {
         			if (err2) {
         				console.log(err2);
@@ -155,8 +158,16 @@ io.on('connection', function(socket){
 	//监听用户发布聊天内容
 	socket.on('message', function(obj){
 		//向所有客户端广播发布的消息
-		io.emit('message', obj);
-		console.log(obj.username+'说：'+obj.content);
+		// io.emit('message', obj);
+		if (onlineUsers[obj.to]) {
+			console.log(onlineUsers);
+			console.log(obj.to);
+			var toSocket = onlineUsers[obj.to];
+			toSocket.emit('message', obj);
+		} else {
+			console.log("不在线");
+		}
+		console.log(obj);
 	});
   
 });

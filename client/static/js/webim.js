@@ -23,6 +23,12 @@ var PAGELIMIT = 8;
 var pageLimitKey = new Date().getTime();
 var socket = io.connect('ws://localhost:3000');
 
+
+socket.on('message', function(obj) {
+	handleTextMessage(obj);
+	alert(obj);
+});
+
 var encode = function ( str ) {
 	if ( !str || str.length === 0 ) return "";
 	var s = '';
@@ -719,6 +725,7 @@ var login = function() {
 				};
 				if (obj.result == "succeed") {
 					alert("登录成功");
+					curUserId = user;
 					buildContactDiv("contractlist", obj.friend);//联系人列表页面处理
 				};
 				
@@ -1096,6 +1103,7 @@ var sendText = function() {
 		return;
 	}
 	var options = {
+		from : curUserId,
 		to : to,
 		msg : msg,
 		type : "chat"
@@ -1109,12 +1117,16 @@ var sendText = function() {
 		options.roomType = chatRoomMark;
 		options.to = curRoomId;
 	}
+	socket.emit('message', options);
+
+	// alert(options.to);
+	// alert(options.message);
 
 	//easemobwebim-sdk发送文本消息的方法 to为发送给谁，meg为文本消息对象
-	conn.sendTextMessage(options);
+	// conn.sendTextMessage(options);
 	//当前登录人发送的信息在聊天窗口中原样显示
 	var msgtext = Easemob.im.Utils.parseLink(Easemob.im.Utils.parseEmotions(encode(msg)));
-	appendMsg(curUserId, to, msgtext);
+	appendMsg(curUserId, to, msg);
 	turnoffFaces_box();
 	msgInput.value = "";
 	msgInput.focus();
@@ -1354,7 +1366,7 @@ var sendFile = function() {
 var handleTextMessage = function(message) {
 	var from = message.from;//消息的发送者
 	var mestype = message.type;//消息发送的类型是群组消息还是个人消息
-	var messageContent = message.data;//文本消息体
+	var messageContent = message.msg;//文本消息体
 	//TODO  根据消息体的to值去定位那个群组的聊天记录
 	var room = message.to;
 	if (mestype == groupFlagMark || mestype == chatRoomMark) {
@@ -1554,6 +1566,7 @@ var handleChatRoomMessage = function (contact) {
 };
 //显示聊天记录的统一处理方法
 var appendMsg = function(who, contact, message) {
+	// alert(message);
 	if ( !handleChatRoomMessage(contact) ) { return; }
 	//if ( !contact.indexOf(chatRoomMark) > -1 ) { return; }
 
