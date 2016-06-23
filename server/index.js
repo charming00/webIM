@@ -2,6 +2,7 @@ var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var mysql = require('mysql');
+var crypto = require("crypto");  
 
 var conn = mysql.createConnection({
     host: 'localhost',
@@ -37,12 +38,16 @@ io.on('connection', function(socket){
 	//监听注册
 	socket.on('register', function(obj){
 
-		console.log("aa" > "bb");
+		// console.log("aa" > "bb");
 		//将新加入用户的唯一标识当作socket的名称，后面退出的时候会用到
-		var selectSQL = 'select * from user where user_name = "' + obj.username + '"';
+		var selectSQL = 'select * from user where user_name = "' + obj.username + '" or user_email = "' + obj.email + '"';
 		// var selectSQL = 'select user_name from user where 1';
 		console.log(selectSQL);
-		var insertSQL = 'insert into user(user_name, user_passwd) values("' + obj.username + '" , "' + obj.passwd + '")';
+
+		var md5Passwd = crypto.createHash("md5").update(obj.passwd).digest("hex");
+		console.log(md5Passwd);
+
+		var insertSQL = 'insert into user(user_email, user_name, user_passwd) values("' + obj.email + '" , "' + obj.username + '" , "' + md5Passwd + '")';
 
 		var registerResult = {};
 
@@ -51,22 +56,23 @@ io.on('connection', function(socket){
 				console.log(err1);
 			}
         	console.log("Select Return ==> ");
-        	// console.log(res1);
-        	// for (var i = 0; i < res1.length; i++) {
-        	// 	console.log(res1[i]);
-        	// 	console.log(res1[i].user_name);
-        	// };
+
         	if (res1.length == 0 ) {
         		console.log("null");
-        		conn.query(insertSQL, function (err2, res2) {
-        			console.log("Insert Return ==> ");
+        		conn.query(insertSQL, function(err2, res2) {
+        			console.log("insert succeed!");
+        			registerResult["result"] = "succeed";
+        			if (err2) {
+        				console.log("insert error!");
+        				registerResult["result"] = "error";
+        			};
+        			socket.emit("register", registerResult);
         		});
-        		registerResult["result"] = "succeed";
         	} else {
         		console.log(res1);
         		registerResult["result"] = "error";
+        		socket.emit("register", registerResult);
         	}
-
         	socket.emit("register", registerResult);
         });
 
@@ -97,10 +103,11 @@ io.on('connection', function(socket){
 	// 监听登录
 	socket.on('login', function(obj){
 		//将新加入用户的唯一标识当作socket的名称，后面退出的时候会用到
-		var selectSQL = 'select * from user where user_name = "' + obj.username + '" and user_passwd = "' + obj.passwd + '"' ;
+		var md5Passwd = crypto.createHash("md5").update(obj.passwd).digest("hex");
+		console.log(md5Passwd);
+		var selectSQL = 'select * from user where user_name = "' + obj.username + '" and user_passwd = "' + md5Passwd + '"' ;
 		var selectFriendSQL = 'select * from friend where user1 = "' + obj.username + '" or user2 = "' + obj.username + '"';
 		console.log(selectSQL);
-		var insertSQL = 'insert into user(user_name, user_passwd) values("' + obj.username + '" , "' + obj.passwd + '")';
 		var loginResult = {};
 		var friend = [];
 		conn.query(selectSQL, function (err1, res1) {
@@ -109,7 +116,9 @@ io.on('connection', function(socket){
 			}
         	console.log("Select Return ==> ");
         	if (res1.length == 0 ) {
+        		console.log("login error");
         		loginResult["result"] = "error";
+        		socket.emit("login", loginResult);
         	} else {
         		console.log(res1);
         		loginResult["result"] = "succeed";

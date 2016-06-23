@@ -22,12 +22,18 @@ var fileshim;
 var PAGELIMIT = 8;
 var pageLimitKey = new Date().getTime();
 var socket = io.connect('ws://localhost:3000');
-
+// var crypto = require("crypto"); 
 
 socket.on('message', function(obj) {
 	handleTextMessage(obj);
 	alert(obj);
 });
+
+socket.on('notice', function(obj) {
+	handleTextMessage(obj);
+	alert(obj);
+});
+
 
 var encode = function ( str ) {
 	if ( !str || str.length === 0 ) return "";
@@ -715,13 +721,15 @@ var login = function() {
 			hiddenLoginUI();
 			showWaitLoginedUI();
 			//根据用户名密码登录系统
-			
+			// var md5Passwd = crypto.createHash("md5").update(pass).digest("hex");
 			//告诉服务器端有用户登录
 			socket.emit('login', {username:user, passwd:pass});
 			
 			socket.on('login', function(obj){
 				if (obj.result == "error") {
 					alert("用户名或密码错误");
+					hiddenWaitLoginedUI();
+					showLoginUI();
 				};
 				if (obj.result == "succeed") {
 					alert("登录成功");
@@ -744,16 +752,43 @@ var login = function() {
 };
 //注册新用户操作方法
 var register = function() {
+	var email = $("#regist_email").val();
 	var user = $("#regist_username").val();
 	var pass = $("#regist_password").val();
-	var nickname = $("#regist_nickname").val();
-	if (user == '' || pass == '' || nickname == '') {
-		alert("用户名/密码不能为空");
+	var emailReg =  /^([a-zA-Z0-9]+[_|\_|\.]?)*[a-zA-Z0-9]+@([a-zA-Z0-9]+[_|\_|\.]?)*[a-zA-Z0-9]+\.[a-zA-Z]{2,3}$/;
+
+	if (email == '') {
+		alert("邮箱不能为空");
 		return;
-	}
+	};
+
+	if (user == '') {
+		alert("用户名不能为空");
+		return;
+	};
+
+	if (pass == '') {
+		alert("密码不能为空");
+		return;
+	};
+
+	if (!emailReg.test(email)) {
+		alert("请输入正确的邮箱格式");
+		return;
+	};
+
+	if (user.length <= 6 ) {
+		alert("请输入6位以上的用户名");
+		return;
+	};
+
+	if (pass.length <= 6 ) {
+		alert("请输入6位以上的密码");
+		return;
+	};
 
 
-	socket.emit('register', {username:user, passwd:pass});
+	socket.emit('register', {email:email, username:user, passwd:pass});
 			
 	socket.on('register', function(obj){
 		if (obj.result == "error") {
@@ -761,6 +796,8 @@ var register = function() {
 		};
 		if (obj.result == "succeed") {
 			alert("注册成功");
+			$('#loginmodal').modal('show');
+			$('#regist-div-modal').modal('hide');
 		};
 				
 	});
@@ -845,6 +882,8 @@ var setCurrentContact = function(defaultUserId) {
 var buildContactDiv = function(contactlistDivId, roster) {
 	hiddenWaitLoginedUI();
 	showChatUI();
+
+	
 	var uielem = document.getElementById("contactlistUL");
 	var cache = {};
 	for (i = 0; i < roster.length; i++) {
